@@ -161,12 +161,16 @@ function html(body, status) {
 
 function renderPage(data) {
   const accentColor = ACCENT_COLOR || (APP_NAME === "v2rayN" ? "#1a73e8" : "#7c3aed");
-  const winBtn = data.winAvailable
-    ? `<div class="btn-row"><a class="btn" href="/download/windows"><span class="os">Windows</span><span class="ver">${data.winVersion}</span></a></div>`
-    : "";
-  const andBtn = data.andAvailable
-    ? `<div class="btn-row"><a class="btn and" href="/download/android"><span class="os">Android</span><span class="ver">${data.andVersion}</span></a></div>`
-    : "";
+  const winColor = accentColor;
+  const andColor = "#16a34a";
+  const winBody = data.winAvailable
+    ? '<span class="os">Windows</span><span class="ver">' + data.winVersion + '</span>'
+    : '<span class="os">Windows (unavailable)</span>';
+  const andBody = data.andAvailable
+    ? '<span class="os">Android</span><span class="ver">' + data.andVersion + '</span>'
+    : '<span class="os">Android (unavailable)</span>';
+  const winDisabled = data.winAvailable ? "" : " disabled";
+  const andDisabled = data.andAvailable ? "" : " disabled";
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -180,13 +184,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .icon{width:64px;height:64px;margin:0 auto 24px;background:${accentColor};border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700}
 h1{font-size:28px;color:#1a1a2e;margin-bottom:8px}
 .desc{color:#6b7280;font-size:14px;margin-bottom:24px}
-.btn-row{margin:10px 0}
-.btn{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:${accentColor};color:#fff;text-decoration:none;border-radius:12px;font-weight:600;transition:all .2s;border:none;cursor:pointer}
-.btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 12px ${accentColor}44}
-.btn.and{background:#fff;color:${accentColor};border:2px solid ${accentColor}}
-.btn.and .ver{color:#6b7280}
-.btn .os{font-size:16px}
-.btn .ver{font-size:13px;opacity:.9}
+.opts{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.opt{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:#fff;color:var(--c);border:2px solid var(--c);border-radius:12px;font-weight:600;font-size:16px;cursor:pointer;transition:all .2s;text-align:left}
+.opt .ver{font-size:13px;color:#6b7280;font-weight:500}
+.opt.selected{background:var(--c);color:#fff}
+.opt.selected .ver{color:rgba(255,255,255,.9)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.dl{width:100%;padding:16px 20px;background:${winColor};color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s}
+.dl:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
 .info{margin-top:20px;padding:14px;background:#f8fafc;border-radius:10px;font-size:13px;color:#6b7280;line-height:1.8}
 .divider{margin:20px 0;border:none;border-top:1px solid #e5e7eb}
 .alt-link{margin-top:4px}
@@ -199,9 +204,12 @@ footer{margin-top:24px;font-size:12px;color:#9ca3af}
 <div class="card">
   <div class="icon">${APP_NAME.charAt(0)}</div>
   <h1>${APP_NAME}</h1>
-  <p class="desc">Choose your platform</p>
-  ${winBtn}
-  ${andBtn}
+  <p class="desc">Select platform then download</p>
+  <div class="opts" id="opts">
+    <button class="opt" data-pf="windows" style="--c:${winColor}"${winDisabled}>${winBody}</button>
+    <button class="opt" data-pf="android" style="--c:${andColor}"${andDisabled}>${andBody}</button>
+  </div>
+  <button id="dl" class="dl">Download</button>
   <div class="info">
     <div>Source: GitHub Official Release</div>
   </div>
@@ -211,6 +219,28 @@ footer{margin-top:24px;font-size:12px;color:#9ca3af}
   </div>
   <footer>Auto-updated from GitHub Releases</footer>
 </div>
+<script>
+(function(){
+  var opts=Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var dl=document.getElementById("dl");
+  function apply(p){
+    opts.forEach(function(o){o.classList.toggle("selected",o.getAttribute("data-pf")===p);});
+    var sel=opts.filter(function(o){return o.getAttribute("data-pf")===p;})[0];
+    if(sel)dl.style.background=sel.style.getPropertyValue("--c");
+  }
+  document.getElementById("opts").addEventListener("click",function(e){
+    var o=e.target.closest(".opt");
+    if(!o||o.disabled)return;
+    apply(o.getAttribute("data-pf"));
+  });
+  dl.addEventListener("click",function(){
+    var sel=document.querySelector(".opt.selected");
+    var p=sel?sel.getAttribute("data-pf"):"windows";
+    location.href="/download/"+p;
+  });
+  for(var i=0;i<opts.length;i++){ if(!opts[i].disabled){ apply(opts[i].getAttribute("data-pf")); break; } }
+})();
+</script>
 </body>
 </html>`;
 }
